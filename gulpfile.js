@@ -26,6 +26,7 @@ var config = {
   path: {
     less: [
       './less/amazeui.less',
+      './components/status-progressbar/src/component-status-progressbar.less',
       './less/themes/flat/amazeui.flat.less'
     ],
     fonts: './fonts/*',
@@ -272,6 +273,17 @@ gulp.task('build:js:fuckie', function() {
     .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
 });
 
+gulp.task('build:js:components', function() {
+  return gulp.src('components/*/src/*.js')
+  .pipe($.concat('amazeui.components.js'))
+    .pipe(gulp.dest(config.dist.js))
+    .pipe($.uglify(config.uglify))
+    .pipe($.rename({suffix: '.min'}))
+    .pipe(gulp.dest(config.dist.js))
+    .pipe($.size({showFiles: true, title: 'minified'}))
+    .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
+});
+
 gulp.task('build:js:helper', function() {
   gulp.src(config.path.hbsHelper)
     .pipe($.concat(pkg.name + '.widgets.helper.js'))
@@ -316,7 +328,7 @@ gulp.task('build:js:pack', function() {
 
 gulp.task('build:js', function(cb) {
   runSequence(
-    ['build:js:pack', 'build:js:fuckie'],
+    ['build:js:pack', 'build:js:fuckie','build:js:components'],
     ['build:js:helper'],
     cb);
 });
@@ -333,7 +345,7 @@ gulp.task('build', function(cb) {
 gulp.task('watch', function() {
   gulp.watch(['widget/**/*.json', 'widget/**/*.hbs'], ['build:preparing']);
   // gulp.watch(['js/*.js', 'widget/*/src/*.js'], ['build:js']);
-  gulp.watch(['less/**/*.less', 'widget/*/src/*.less'], ['build:less']);
+  gulp.watch(['less/**/*.less','components/*/src/*.less','widget/*/src/*.less'], ['build:less']);
   gulp.watch(config.path.hbsHelper, ['build:js:helper']);
 });
 
