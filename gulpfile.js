@@ -26,7 +26,7 @@ var config = {
   path: {
     less: [
       './less/amazeui.less',
-      './components/status-progressbar/src/component-status-progressbar.less',
+      // './components/status-progressbar/src/component-status-progressbar.less',
       './less/themes/flat/amazeui.flat.less'
     ],
     fonts: './fonts/*',
@@ -235,8 +235,8 @@ gulp.task('build:less', function() {
         path.join(__dirname, 'widget/*/src')]
     }))
     .pipe($.rename(function(path) {
-      if (path.basename === 'amui') {
-        path.basename = pkg.name + '.basic';
+      if (path.basename === 'amazeui') {
+        path.basename = pkg.name + '_basic';
       }
     }))
     .pipe($.autoprefixer({browsers: config.AUTOPREFIXER_BROWSERS}))
@@ -245,6 +245,38 @@ gulp.task('build:less', function() {
     .pipe($.size({showFiles: true, title: 'source'}))
     // Disable advanced optimizations - selector & property merging, etc.
     // for Issue #19 https://github.com/allmobilize/amazeui/issues/19
+    .pipe($.minifyCss({noAdvanced: true}))
+    .pipe($.rename({
+      suffix: '.min',
+      extname: '.css'
+    }))
+    .pipe(gulp.dest(config.dist.css))
+    .pipe($.size({showFiles: true, title: 'minified'}))
+    .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
+});
+
+gulp.task('build:less:components', function() {
+   return gulp.src('components/*/src/*.less')
+    .pipe($.concat('amazeui_components.css'))
+    .pipe($.less())
+    .pipe(gulp.dest(config.dist.css))
+    .pipe($.size({showFiles: true, title: 'source'}))
+    .pipe($.minifyCss({noAdvanced: true}))
+    .pipe($.rename({
+      suffix: '.min',
+      extname: '.css'
+    }))
+    .pipe(gulp.dest(config.dist.css))
+    .pipe($.size({showFiles: true, title: 'minified'}))
+    .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
+});
+
+gulp.task('build:less:amazeuiall', function() {
+  return gulp.src(['dist/css/amazeui_basic.css','dist/css/amazeui_components.css'])
+    .pipe($.concat('amazeui.css'))
+    .pipe($.less())
+    .pipe(gulp.dest(config.dist.css))
+    .pipe($.size({showFiles: true, title: 'source'}))
     .pipe($.minifyCss({noAdvanced: true}))
     .pipe($.rename({
       suffix: '.min',
@@ -273,17 +305,6 @@ gulp.task('build:js:fuckie', function() {
     .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
 });
 
-gulp.task('build:js:components', function() {
-  return gulp.src('components/*/src/*.js')
-  .pipe($.concat('amazeui.components.js'))
-    .pipe(gulp.dest(config.dist.js))
-    .pipe($.uglify(config.uglify))
-    .pipe($.rename({suffix: '.min'}))
-    .pipe(gulp.dest(config.dist.js))
-    .pipe($.size({showFiles: true, title: 'minified'}))
-    .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
-});
-
 gulp.task('build:js:helper', function() {
   gulp.src(config.path.hbsHelper)
     .pipe($.concat(pkg.name + '.widgets.helper.js'))
@@ -298,9 +319,9 @@ gulp.task('build:js:helper', function() {
 gulp.task('build:js:pack', function() {
   return gulp.src('js/amazeui.js')
     .pipe(webpack({
-      watch: !(NODE_ENV === 'travisci' || NODE_ENV === 'production'),
+      // watch: !(NODE_ENV === 'travisci' || NODE_ENV === 'production'),
       output: {
-        filename: 'amazeui.js',
+        filename: 'amazeui_basic.js',
         library: 'AMUI',
         libraryTarget: 'umd'
       },
@@ -326,9 +347,33 @@ gulp.task('build:js:pack', function() {
     .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
 });
 
+gulp.task('build:js:components', function() {
+  return gulp.src('components/*/src/*.js')
+  .pipe($.concat('amazeui_components.js'))
+    .pipe(gulp.dest(config.dist.js))
+    .pipe($.uglify(config.uglify))
+    .pipe($.rename({suffix: '.min'}))
+    .pipe(gulp.dest(config.dist.js))
+    .pipe($.size({showFiles: true, title: 'minified'}))
+    .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
+});
+
+gulp.task('build:js:concatUI', function() {
+  return gulp.src(['dist/js/amazeui_basic.js','dist/js/amazeui_components.js'])
+  .pipe($.concat('amazeui.js'))
+    .pipe(gulp.dest(config.dist.js))
+    .pipe($.uglify(config.uglify))
+    .pipe($.rename({suffix: '.min'}))
+    .pipe(gulp.dest(config.dist.js))
+    .pipe($.size({showFiles: true, title: 'minified'}))
+    .pipe($.size({showFiles: true, gzip: true, title: 'gzipped'}));
+});
+
 gulp.task('build:js', function(cb) {
   runSequence(
-    ['build:js:pack', 'build:js:fuckie','build:js:components'],
+    ['build:js:pack', 'build:js:fuckie'],
+    ['build:js:components'],
+    ['build:js:concatUI'],
     ['build:js:helper'],
     cb);
 });
@@ -338,6 +383,8 @@ gulp.task('build', function(cb) {
     'build:preparing',
     'build:clean',
     ['build:less', 'build:fonts', 'build:js'],
+    ['build:less:components'],
+    ['build:less:amazeuiall'],
     cb);
 });
 
