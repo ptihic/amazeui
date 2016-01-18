@@ -7,17 +7,28 @@ $(function() {
       var ul, li, data, name, value;
 
       ul = $(this).html('');
-      data = JSON.parse(ul.attr('data-status-progressbar'));
+      if (ul.attr('data-status-progressbar')) {
+        data = JSON.parse(ul.attr('data-status-progressbar'));
+      } else if (ul.attr('data-status-progressbar-url')) {
+        $.ajax({
+          type: "GET",
+          url: ul.attr('data-status-progressbar-url'),
+          async: false,
+          dataType: "json",
+          success: function(res) {
+            data = res;
+          },
+          error: function() {
+            alert("error");
+          }
+        });
+      }
 
       // Insert progresses
       for (name in data) {
         value = data[name];
         ul.append(
-          '<li class="progress' + (value.status === '' ? '' : ' active') + '"><ul>' +
-            '<li class="status">' + name + '</li>' +
-            '<li class="' + (value.status === 'danger' ? 'cross am-icon am-icon-times' : 'circle') + '"></li>' +
-            '<li class="date">' + (value.date === '' ? '&nbsp;<br/>&nbsp;' : value.date.replace(/ /, '<br/>')) + '</li>' +
-          '</ul></li>'
+          '<li class="progress' + (value.status === '' ? '' : ' active') + '"><ul>' + '<li class="status">' + name + '</li>' + '<li class="' + (value.status === 'danger' ? 'cross am-icon am-icon-times' : 'circle') + '"></li>' + '<li class="date">' + (value.date === '' ? '&nbsp;<br/>&nbsp;' : value.date.replace(/ /, '<br/>')) + '</li>' + '</ul></li>'
         );
       }
 
